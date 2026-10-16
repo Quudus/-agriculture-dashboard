@@ -6,7 +6,7 @@
 
 ## What the dashboard shows
 
-Six visualizations on one screen:
+Five visualizations on one screen:
 
 | Chart | What it answers |
 |---|---|
