@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agricultural Performance Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --fg: #191816;
+  --fg-muted: #6a6560;
+  --accent: #166534;
+  --accent-lt: #f0fdf4;
+  --border: #e2dfd8;
+  --sig: #166534;
+  --sig-bg: #f0fdf4;
+  --sig-bd: #86efac;
+  --ns: #6b7280;
+  --ns-bg: #f3f4f6;
+  --ns-bd: #d1d5db;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111009;
+    --surface: #1b1a17;
+    --fg: #f0ece3;
+    --fg-muted: #96908a;
+    --accent: #4ade80;
+    --accent-lt: #052e16;
+    --border: #2c2a25;
+    color-scheme: dark;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.page { max-width: 880px; margin: 0 auto; }
+
+.display {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(2rem, 5.5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 1.2rem;
+}
+
+p { max-width: 64ch; }
+p + p { margin-top: 0.85rem; }
+strong { font-weight: 600; }
+
+.header {
+  padding: 3.5rem 0 2.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2.5rem;
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.2rem;
+  margin-bottom: 1.4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.meta-sep { opacity: 0.4; }
+
+.tagline {
+  margin-top: 1.1rem;
+  font-size: 1rem;
+  color: var(--fg-muted);
+  max-width: 60ch;
+  line-height: 1.6;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--border);
+  gap: 1px;
+  margin-bottom: 3rem;
+}
+
+@media (max-width: 560px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+.stat-cell {
+  background: var(--surface);
+  padding: 1.2rem 1.3rem;
+}
+
+.stat-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 0.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-lbl {
+  font-size: 0.72rem;
+  color: var(--fg-muted);
+  line-height: 1.3;
+}
+
+.section {
+  padding-bottom: 2.75rem;
+  margin-bottom: 2.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.section:last-of-type { border-bottom: none; }
+
+.tableau-wrap {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+  margin-bottom: 0.75rem;
+}
+
+.embed-note { font-size: 0.75rem; color: var(--fg-muted); line-height: 1.4; }
+.embed-note a { color: var(--accent); text-decoration: none; }
+.embed-note a:hover { text-decoration: underline; }
+
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 1.2rem;
+}
+
+.pipe-step {
+  flex: 1;
+  min-width: 80px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.55rem 0.8rem;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.pipe-step span {
+  display: block;
+  font-weight: 400;
+  font-size: 0.68rem;
+  color: var(--fg-muted);
+  margin-top: 0.15rem;
+}
+
+.pipe-arr { color: var(--fg-muted); font-size: 0.8rem; padding: 0 0.25rem; flex-shrink: 0; }
+.pipe-note { font-size: 0.82rem; color: var(--fg-muted); }
+
+.charts-list { display: flex; flex-direction: column; gap: 0.65rem; }
+
+.chart-item {
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+}
+
+.chart-name { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.1rem; }
+.chart-desc { font-size: 0.75rem; color: var(--fg-muted); line-height: 1.4; max-width: 56ch; }
+
+.finding {
+  background: var(--accent-lt);
+  border-left: 4px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 1.4rem 1.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.finding-stat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.finding p { color: var(--fg); font-size: 0.9rem; max-width: 58ch; }
+
+.tools { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+
+.tool {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--fg-muted);
+  background: var(--surface);
+}
+
+.footer {
+  padding: 2rem 0 3rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 0.73rem;
+  color: var(--fg-muted);
+}
+
+.footer a { color: var(--accent); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="header">
+    <div class="meta-row">
+      <span>Tableau Public</span>
+      <span class="meta-sep">·</span>
+      <span>2024</span>
+      <span class="meta-sep">·</span>
+      <span>Quudus Oladosu</span>
+    </div>
+    <h1 class="display">Agricultural Performance<br>Dashboard (2024)</h1>
+    <p class="tagline">An interactive Tableau dashboard exploring global crop yield, soil health, economic impact, and farming adaptation strategies — built on climate and agriculture data covering six major countries.</p>
+  </header>
+
+  <div class="stats-row">
+    <div class="stat-cell">
+      <div class="stat-num">6</div>
+      <div class="stat-lbl">Countries compared</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">5</div>
+      <div class="stat-lbl">Visualizations on one screen</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">+0.71</div>
+      <div class="stat-lbl">t/ha — highest yield gain (Fruits)</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">26.9%</div>
+      <div class="stat-lbl">Farms with no adaptation strategy</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Live Dashboard</div>
+    <div class="tableau-wrap">
+      <div class='tableauPlaceholder' id='viz1' style='position:relative'>
+        <noscript>
+          <a href='https://public.tableau.com/app/profile/quudus.oladosu/viz/FinalProject_17921747813360/Dashboard3'>
+            <img alt='Agricultural Performance Dashboard 2024' src='https://public.tableau.com/static/images/Fi/FinalProject_17921747813360/Dashboard3/1_rss.png' style='border:none;width:100%;' />
+          </a>
+        </noscript>
+        <object class='tableauViz' style='display:none;'>
+          <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+          <param name='embed_code_version' value='3' />
+          <param name='site_root' value='' />
+          <param name='name' value='FinalProject_17921747813360/Dashboard3' />
+          <param name='tabs' value='no' />
+          <param name='toolbar' value='yes' />
+          <param name='static_image' value='https://public.tableau.com/static/images/Fi/FinalProject_17921747813360/Dashboard3/1_rss.png' />
+          <param name='animate_transition' value='yes' />
+          <param name='display_static_image' value='yes' />
+          <param name='display_spinner' value='yes' />
+          <param name='display_overlay' value='yes' />
+          <param name='display_count' value='yes' />
+          <param name='language' value='en-US' />
+        </object>
+      </div>
+    </div>
+    <p class="embed-note">
+      Interactive dashboard on Tableau Public —
+      <a href="https://public.tableau.com/app/profile/quudus.oladosu/viz/FinalProject_17921747813360/Dashboard3" target="_blank" rel="noopener">open in full screen &uarr;</a>
+    </p>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Data Pipeline</div>
+    <div class="pipeline">
+      <div class="pipe-step">Kaggle<span>Raw CSV dataset</span></div>
+      <div class="pipe-arr">&rarr;</div>
+      <div class="pipe-step">Excel<span>Data cleaning &amp; prep</span></div>
+      <div class="pipe-arr">&rarr;</div>
+      <div class="pipe-step">Tableau<span>Visual design &amp; layout</span></div>
+      <div class="pipe-arr">&rarr;</div>
+      <div class="pipe-step">Tableau Public<span>Published &amp; live</span></div>
+    </div>
+    <p class="pipe-note">Dataset: Climate Change Impact on Agriculture 2024 — six countries (Australia, Brazil, China, France, Nigeria, USA), multiple crop types, soil health indices, fertilizer usage, economic impact, and adaptation strategies.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-label">What the Dashboard Shows</div>
+    <div class="charts-list">
+      <div class="chart-item">
+        <div class="chart-name">KPI Cards</div>
+        <div class="chart-desc">Top crop, top country, lowest soil health, and highest economic impact at a glance — one number each, front and center on the dashboard.</div>
+      </div>
+      <div class="chart-item">
+        <div class="chart-name">Countries by Crop Yield</div>
+        <div class="chart-desc">How Australia, Brazil, China, France, Nigeria, and the USA each compare against the global average yield — showing which countries outperform and which fall short.</div>
+      </div>
+      <div class="chart-item">
+        <div class="chart-name">Net Yield Change per Crop (2024 vs 2023)</div>
+        <div class="chart-desc">Which crops improved year over year and which declined — a direct comparison of 2024 performance against 2023 baselines by crop type.</div>
+      </div>
+      <div class="chart-item">
+        <div class="chart-name">Adaptation Strategies Share</div>
+        <div class="chart-desc">Breakdown of which farming adaptation methods are most commonly used — drought-resistant crops, irrigation, organic practices, and farms using no strategy at all.</div>
+      </div>
+      <div class="chart-item">
+        <div class="chart-name">Fertilizer Usage vs Soil Health Index</div>
+        <div class="chart-desc">Whether higher fertilizer use actually corresponds to better soil health — plotted country by country to reveal whether more fertilizer means healthier soil or just higher costs.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Key Findings</div>
+
+    <div class="finding">
+      <div class="finding-stat">+0.71 t/ha vs &minus;0.50 t/ha</div>
+      <p>Fruits had the highest yield gain from 2023 to 2024, while Wheat had the steepest decline — the widest spread in year-over-year performance across all crop types.</p>
+    </div>
+
+    <div class="finding">
+      <div class="finding-stat">Brazil &mdash; 2.36 t/ha</div>
+      <p>Brazil topped country crop yield at 2.36 t/ha, above the global average. Nigeria and the USA both came in below average, pointing to regional agricultural differences beyond just land area.</p>
+    </div>
+
+    <div class="finding">
+      <div class="finding-stat">$23,059M &mdash; Australia</div>
+      <p>Australia had the highest economic impact despite not having the highest yield — suggesting crop type and market value are bigger drivers of economic output than raw production volume.</p>
+    </div>
+
+    <div class="finding">
+      <div class="finding-stat">France &mdash; Soil Health 63.17</div>
+      <p>France had the lowest soil health index (63.17) while using relatively high fertilizer (50.8 kg/ha), suggesting fertilizer use alone does not protect soil health.</p>
+    </div>
+
+    <div class="finding">
+      <div class="finding-stat">26.9% &mdash; No Adaptation</div>
+      <p>Over a quarter of farms used no adaptation strategy at all. Among those that did, drought-resistant crops (25.1%) were the most common method — a sign of climate pressure on farming decisions.</p>
+    </div>
+
+  </div>
+
+  <div class="section">
+    <div class="section-label">Tools &amp; Skills</div>
+    <div class="tools">
+      <span class="tool">Tableau Public</span>
+      <span class="tool">Excel</span>
+      <span class="tool">Dashboard Design</span>
+      <span class="tool">KPI Cards</span>
+      <span class="tool">Data Visualization</span>
+      <span class="tool">Comparative Analysis</span>
+      <span class="tool">Agricultural Data</span>
+      <span class="tool">Climate Impact Analysis</span>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span>Quudus Oladosu &middot; MS Business Analytics, Temple University</span>
+    <span>Data: <a href="https://www.kaggle.com/datasets/waqi786/climate-change-impact-on-agriculture?select=climate_change_impact_on_agriculture_2024.csv" target="_blank" rel="noopener">Kaggle &mdash; Climate Change Impact on Agriculture 2024</a></span>
+  </footer>
+
+</div>
+
+<script type='text/javascript'>
+  var divElement = document.getElementById('viz1');
+  var vizElement = divElement.getElementsByTagName('object')[0];
+  vizElement.style.width = '100%';
+  vizElement.style.height = (divElement.offsetWidth * 0.75) + 'px';
+  var scriptElement = document.createElement('script');
+  scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+  vizElement.parentNode.insertBefore(scriptElement, vizElement);
+</script>
+
+</body>
+</html>
